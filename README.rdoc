@@ -1,0 +1,55 @@
+= vf
+
+Enhanced version of the standard "cd" command
+
+== Usage
+
+Use a <i>real</i> path :
+
+  vf /go/to/the/desired/path
+  vf ../here
+  vf ~/documents
+
+Go home :
+
+  vf
+
+Create an alias :
+
+  vf /go/to/the/desired/path
+  vf -s myalias
+
+Then if you want to go to <tt>/go/to/the/desired/path</tt> :
+
+  vf myalias
+
+Remove an alias :
+
+  vf -r myalias
+
+== Install
+
+Clone the repository in your prefered directory :
+
+  git clone git://github.com/glejeune/vf
+
+Then add the following line in your .bashrc, .zshrc, .<i>your shell</i>rc :
+
+  source /path/to/vf/vf.sh
+
+== It does not work to me
+
+<i>Sorry dude!</i> 
+
+vf was tested on MacOSX only, but you can help...
+
+== Contributing to vf
+ 
+* Check out the latest master to make sure the feature hasn't been implemented or the bug hasn't been fixed yet 
+* Check out the issue tracker to make sure someone already hasn't requested it and/or contributed it
+* Fork the project
+* Start a feature/bugfix branch
+* Commit and push until you are happy with your contribution
+* Make sure to add tests for it. This is important so I don't break it in a future version unintentionally.
+* Please try not to mess with the Rakefile, version, or history. If you want to have your own version, or is otherwise necessary, that is fine, but please isolate to its own commit so I can cherry-pick around it.
+
