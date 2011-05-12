@@ -27,6 +27,14 @@ Remove an alias :
 
   vf -r myalias
 
+List your alias :
+
+  vf -l
+
+And, if you need more help : 
+
+  vf -h
+
 == Install
 
 Clone the repository in your prefered directory :
