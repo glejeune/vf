@@ -46,7 +46,7 @@ This will display a list like :
   2 : /Users/greg/Documents/CouchDB
   1 : /Users/greg/temp/Leonhard
 
-Then you can use <tt>+N<+tt> to go back to <tt>N</tt> :
+Then you can use <tt>+N</tt> to go back to <tt>N</tt> :
 
   vf +2
   # I'm now in /Users/greg/Documents/CouchDB
