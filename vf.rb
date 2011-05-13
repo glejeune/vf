@@ -42,6 +42,10 @@ class Historize
     @history.size
   end
   
+  def [](n)
+    @history[n]
+  end
+  
   def last(n = @max_size)
     n = size if n > size
     @history[-n, n]
@@ -131,15 +135,25 @@ class VF
       if a == "-" or a == "" or File.exist? a
         cd a
       else
-        find = nil
-        if @find
-          find = `ls -R . | grep -m1 /#{a}:`.gsub!(/:$/,'')
-        end
-        
-        if find
-          cd find
+        if a[0].chr == "+"
+          position = a.to_i * -1
+          path = @historize[position]
+          if path.nil?
+            echo "This entry does not existe. See 'vf -H #{position*-1}'"
+          else
+            cd path
+          end
         else
-          echo "Don't know where is #{a}"
+          find = nil
+          if @find
+            find = `ls -R . | grep -m1 /#{a}:`.gsub!(/:$/,'')
+          end
+        
+          if find
+            cd find
+          else
+            echo "Don't know where is #{a}"
+          end
         end
       end
     end
@@ -178,6 +192,10 @@ class VF
   
   def cd(path)
     add_command "cd #{normalize(path)}"
+    
+    path = "~" if path == ""
+    path = @historize[-2] if path == "-"
+    path = File.expand_path(File.join(CURRENT_PATH, path))  unless path[0].chr == "/" or path[0].chr == "~"
     @historize << path
   end
   

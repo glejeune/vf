@@ -4,15 +4,17 @@ Enhanced version of the standard "cd" command
 
 == Usage
 
+=== Like "cd"
+
 Use a <i>real</i> path :
 
   vf /go/to/the/desired/path
   vf ../here
   vf ~/documents
-
-Go home :
-
+  vf -
   vf
+
+=== Use alias
 
 Create an alias :
 
@@ -30,6 +32,26 @@ Remove an alias :
 List your alias :
 
   vf -l
+
+=== Use history
+
+You can consult you history :
+
+  vf -H
+
+This will display a list like :
+
+  ...
+  3 : ~
+  2 : /Users/greg/Documents/CouchDB
+  1 : /Users/greg/temp/Leonhard
+
+Then you can use <tt>+N<+tt> to go back to <tt>N</tt> :
+
+  vf +2
+  # I'm now in /Users/greg/Documents/CouchDB
+
+=== More ?
 
 And, if you need more help : 
 
