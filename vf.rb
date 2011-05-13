@@ -62,11 +62,11 @@ class VF
     end
     
     if @data[a]
-      puts "cd #{@data[a]}"
+      puts "cd #{normalize(@data[a])}"
     else
       a = "" if a.nil?
       if a == "-" or a == "" or File.exist? a
-        puts "cd #{a}"
+        puts "cd #{normalize(a)}"
       else  
         puts "echo \"Don't know where is #{a}\""
       end
@@ -91,6 +91,11 @@ class VF
   
   def verbose( s ) 
     puts s if @verbose
+  end
+  
+  private
+  def normalize( path )
+    path.gsub(" ", "\\ ")
   end
 end
 
