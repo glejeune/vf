@@ -8,7 +8,49 @@ VF_VERSION="0.0.1"
 HOME = File.expand_path('~')
 VF_HOME = File.join(HOME, ".vf")
 VF_REPO = File.join(VF_HOME, "vf.yml")
+VF_HISTORY = File.join(VF_HOME, "vf.history")
 CURRENT_PATH = File.expand_path(".")
+
+class Array
+  def rotate
+    push(shift)[-1]
+  end
+end
+
+class Historize
+  attr_accessor :max_size
+  
+  def initialize(max_size = 50)
+    @max_size = max_size
+    if File.exist? VF_HISTORY
+      @history = YAML.load(File.open VF_HISTORY)
+    else
+      @history = []
+    end
+  end
+  
+  def <<(v)
+    if size >= @max_size
+      @history.rotate
+      @history[-1] = v
+    else
+      @history << v
+    end
+  end
+  
+  def size
+    @history.size
+  end
+  
+  def last(n = @max_size)
+    n = size if n > size
+    @history[-n, n]
+  end
+  
+  def save
+    File.open(VF_HISTORY, "w") { |file| file.puts(@history.to_yaml) }
+  end
+end
 
 class VF
   attr_accessor :verbose
@@ -16,12 +58,17 @@ class VF
   attr_accessor :alias
   attr_accessor :list
   attr_accessor :remove
+  attr_accessor :find
+  attr_accessor :history
   
   def initialize
     @verbose = false
     @save = false
     @list = false
     @remove = false
+    @find = false
+    @history = false
+    @commands = []
     
     FileUtils.mkdir(VF_HOME) unless File.exist? VF_HOME
     if File.exist? VF_REPO
@@ -29,24 +76,40 @@ class VF
     else
       @data = {}
     end  
+    
+    @historize = Historize::new()
   end
   
-  def run( a )
+  def run(a)
+    play(a)
+    puts @commands.join(";").gsub(/;{2,}/, ";")
+    @historize.save
+  end
+  
+  def play( a )
     verbose "Current path : #{CURRENT_PATH}"
     
     if @list
-      cmd = ""
       @data.each do |k, v|
-        cmd << "echo '#{k} : #{v}';"
+        echo "#{k} : #{v}"
       end
-      puts cmd
+      return
+    end
+    
+    if @history
+      h = @historize.last((a.to_i>0) ? a.to_i : 10)
+      n = h.size
+      h.each do |cmd|
+        echo "#{n} : #{cmd}"
+        n = n - 1
+      end
       return
     end
     
     if @save
       @data[a] = CURRENT_PATH
       File.open(VF_REPO, "w") { |file| file.puts(@data.to_yaml) }
-      puts "echo 'Alias #{a} added!'"
+      echo "Alias #{a} added!"
       return
     end
         
@@ -54,46 +117,70 @@ class VF
       if @data[a]
         @data.delete(a)
         File.open(VF_REPO, "w") { |file| file.puts(@data.to_yaml) }
-        puts "echo 'Alias #{a} removed!'"
+        echo "Alias #{a} removed!"
       else
-        puts "echo 'Alias #{a} does not exist!'"        
+        echo "Alias #{a} does not exist!"
       end
       return
     end
     
     if @data[a]
-      puts "cd #{normalize(@data[a])}"
+      cd @data[a]
     else
       a = "" if a.nil?
       if a == "-" or a == "" or File.exist? a
-        puts "cd #{normalize(a)}"
-      else  
-        puts "echo \"Don't know where is #{a}\""
+        cd a
+      else
+        find = nil
+        if @find
+          find = `ls -R . | grep -m1 /#{a}:`.gsub!(/:$/,'')
+        end
+        
+        if find
+          cd find
+        else
+          echo "Don't know where is #{a}"
+        end
       end
     end
   end
   
-  def usage
-    puts '
-    echo "usage: vf [-V] [-h] [-v] [-s] alias";
-    echo "-V, --verbose  Verbose mode";
-    echo "-s, --save     Save current path to alias";
-    echo "-r, --remove   Remove alias";
-    echo "-l, --list     List alias";
-    echo "-v, --version  Show version";
+  def usage()
+    echo "usage: vf [-V] [-h] [-v] [-s] alias"
+    echo "-V, --verbose  Verbose mode"
+    echo "-s, --save     Save current path to alias"
+    echo "-r, --remove   Remove alias"
+    echo "-l, --list     List alias"
+    echo "-f, --find     Try to find the directory"
+    echo "-H, --history  Display history"
+    echo "-v, --version  Show version"
     echo "-h, --help     Show this usage message"
-    '
+    puts @commands.join(";").gsub(/;{2,}/, ";")
   end
   
   def version
-    puts "echo 'vf v#{VF_VERSION}, (c) 2011 Gregoire Lejeune <gregoire.lejeune@free.fr>'"
+    echo "vf v#{VF_VERSION}, (c) 2011 Gregoire Lejeune <gregoire.lejeune@free.fr>"
+    puts @commands.join(";").gsub(/;{2,}/, ";")
   end
   
   def verbose( s ) 
-    puts s if @verbose
+    echo "==> #{s}" if @verbose
   end
   
   private
+  def add_command(c)
+    @commands << c
+  end
+  
+  def echo(data)
+    add_command "echo \"#{data}\""
+  end
+  
+  def cd(path)
+    add_command "cd #{normalize(path)}"
+    @historize << path
+  end
+  
   def normalize( path )
     path.gsub(" ", "\\ ")
   end
@@ -107,6 +194,8 @@ oOpt = GetoptLong.new(
   ['--save',    '-s', GetoptLong::NO_ARGUMENT],
   ['--remove',  '-r', GetoptLong::NO_ARGUMENT],
   ['--list',    '-l', GetoptLong::NO_ARGUMENT],
+  ['--find',    '-f', GetoptLong::NO_ARGUMENT],
+  ['--history', '-H', GetoptLong::NO_ARGUMENT],
   ['--version', '-v', GetoptLong::NO_ARGUMENT]
 )
 
@@ -123,6 +212,10 @@ begin
         vf.remove = true
       when '--list'
         vf.list = true
+      when '--history'
+        vf.history = true
+      when '--find'
+        vf.find = true
       when '--help'
         vf.usage( )
         exit
@@ -136,4 +229,4 @@ rescue GetoptLong::InvalidOption => e
   exit
 end
 
-vf.run ARGV[0]
+vf.run( ARGV[0] )
