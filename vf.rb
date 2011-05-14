@@ -9,7 +9,14 @@ HOME = File.expand_path('~')
 VF_HOME = File.join(HOME, ".vf")
 VF_REPO = File.join(VF_HOME, "vf.yml")
 VF_HISTORY = File.join(VF_HOME, "vf.history")
+VF_CONFIGURATION = File.join(VF_HOME, "vf.conf")
 CURRENT_PATH = File.expand_path(".")
+
+class String
+  def to_bool
+    self.match(/(true|t|yes|y|1)$/i) != nil
+  end
+end
 
 class Array
   def rotate
@@ -56,6 +63,52 @@ class Historize
   end
 end
 
+class Configuration
+  def initialize
+    @config = {
+      :history_max_size => {
+        :convert => :to_i,
+        :value => 50
+      },
+      :history_display_size => {
+        :convert => :to_i,
+        :value => 10
+      },
+      :auto_find => {
+        :convert => :to_bool,
+        :value => false
+      }
+    }
+    
+    if File.exist? VF_CONFIGURATION
+      @config = @config.merge(YAML.load(File.open VF_CONFIGURATION))
+    end
+  end
+  
+  def []=(k, v)
+    if @config.keys.include?(k.to_sym)
+      @config[k.to_sym][:value] = v.send(@config[k.to_sym][:convert])
+      return true
+    else
+      return false
+    end
+  end
+  
+  def each(&b)
+    @config.each do |k, v|
+      yield(k, v[:value])
+    end
+  end
+  
+  def [](k)
+    @config[k][:value]
+  end
+  
+  def save
+    File.open(VF_CONFIGURATION, "w") { |file| file.puts(@config.to_yaml) }
+  end
+end
+
 class VF
   attr_accessor :verbose
   attr_accessor :save
@@ -64,6 +117,7 @@ class VF
   attr_accessor :remove
   attr_accessor :find
   attr_accessor :history
+  attr_accessor :config
   
   def initialize
     @verbose = false
@@ -72,6 +126,8 @@ class VF
     @remove = false
     @find = false
     @history = false
+    
+    @config = nil
     @commands = []
     
     FileUtils.mkdir(VF_HOME) unless File.exist? VF_HOME
@@ -81,7 +137,8 @@ class VF
       @data = {}
     end  
     
-    @historize = Historize::new()
+    @configuration = Configuration::new()
+    @historize = Historize::new(@configuration[:history_max_size])
   end
   
   def run(a)
@@ -93,6 +150,23 @@ class VF
   def play( a )
     verbose "Current path : #{CURRENT_PATH}"
     
+    unless @config.nil?
+      if @config == "show"
+        echo "VF Configuration :"
+        @configuration.each do |k, v|
+          echo "  #{k} = #{v}"
+        end
+      else
+        if @configuration[@config] = a
+          echo "Config : #{@config} set to #{a}"
+        else
+          echo "Config : #{@config} is not a config option!"
+        end
+        @configuration.save
+      end
+      return
+    end
+    
     if @list
       @data.each do |k, v|
         echo "#{k} : #{v}"
@@ -101,7 +175,7 @@ class VF
     end
     
     if @history
-      h = @historize.last((a.to_i>0) ? a.to_i : 10)
+      h = @historize.last((a.to_i>0) ? a.to_i : @configuration[:history_display_size])
       n = h.size
       h.each do |cmd|
         echo "#{n} : #{cmd}"
@@ -145,7 +219,7 @@ class VF
           end
         else
           find = nil
-          if @find
+          if @find or @configuration[:auto_find]
             find = `ls -R . | grep -m1 /#{a}:`.gsub!(/:$/,'')
           end
         
@@ -160,15 +234,16 @@ class VF
   end
   
   def usage()
-    echo "usage: vf [-V] [-h] [-v] [-s] alias"
-    echo "-V, --verbose  Verbose mode"
-    echo "-s, --save     Save current path to alias"
-    echo "-r, --remove   Remove alias"
-    echo "-l, --list     List alias"
-    echo "-f, --find     Try to find the directory"
-    echo "-H, --history  Display history"
-    echo "-v, --version  Show version"
-    echo "-h, --help     Show this usage message"
+    echo "usage: vf [option] value"
+    echo "-V, --verbose                      : Verbose mode"
+    echo "-s, --save                         : Save current path to alias"
+    echo "-r, --remove                       : Remove alias"
+    echo "-l, --list                         : List alias"
+    echo "-f, --find                         : Try to find the directory"
+    echo "-H, --history                      : Display history"
+    echo "-c, --config show|<option> <value> : Show or set configuration"
+    echo "-v, --version                      : Show version"
+    echo "-h, --help                         : Show this usage message"
     puts @commands.join(";").gsub(/;{2,}/, ";")
   end
   
@@ -214,6 +289,7 @@ oOpt = GetoptLong.new(
   ['--list',    '-l', GetoptLong::NO_ARGUMENT],
   ['--find',    '-f', GetoptLong::NO_ARGUMENT],
   ['--history', '-H', GetoptLong::NO_ARGUMENT],
+  ['--config',  '-c', GetoptLong::REQUIRED_ARGUMENT],
   ['--version', '-v', GetoptLong::NO_ARGUMENT]
 )
 
@@ -232,6 +308,8 @@ begin
         vf.list = true
       when '--history'
         vf.history = true
+      when '--config'
+        vf.config = xValue
       when '--find'
         vf.find = true
       when '--help'
@@ -242,8 +320,11 @@ begin
         exit
     end
   end
+rescue GetoptLong::MissingArgument => e
+  vf.usage
+  exit
 rescue GetoptLong::InvalidOption => e
-  vf.usage( )
+  vf.usage
   exit
 end
 

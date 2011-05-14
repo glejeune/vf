@@ -14,6 +14,14 @@ Use a <i>real</i> path :
   vf -
   vf
 
+If you use option <tt>-f</tt>, vf will try to find the desired directory for you :
+
+  $ pwd 
+  /Users/greg
+  $ vf -f github
+  $ pwd
+  /Users/greg/dev/github
+
 === Use alias
 
 Create an alias :
@@ -35,7 +43,7 @@ List your alias :
 
 === Use history
 
-You can consult you history :
+Consult your history :
 
   vf -H
 
@@ -51,9 +59,30 @@ Then you can use <tt>+N</tt> to go back to <tt>N</tt> :
   vf +2
   # I'm now in /Users/greg/Documents/CouchDB
 
+=== Configuration
+
+Display the current configuration :
+
+  vf --config show
+
+Here is the default result :
+
+  Configuration :
+   history_max_size = 50
+   history_display_size = 10
+   auto_find = false
+
+* <tt>history_max_size</tt> is the history size (see "history" bellow)
+* <tt>history_display_size</tt> is the history size, displayed by the <tt>-H</tt> option (see "history" bellow)
+* <tt>auto_find</tt> allow vf to find the directory, or not (see <tt>-f</tt> option)
+
+If you want to change an options, use <tt>--config</tt> :
+
+  vf --config history_display_size 15
+
 === More ?
 
-And, if you need more help : 
+If you need more help : 
 
   vf -h
 
@@ -81,5 +110,4 @@ vf was tested on MacOSX only, but you can help...
 * Start a feature/bugfix branch
 * Commit and push until you are happy with your contribution
 * Make sure to add tests for it. This is important so I don't break it in a future version unintentionally.
-* Please try not to mess with the Rakefile, version, or history. If you want to have your own version, or is otherwise necessary, that is fine, but please isolate to its own commit so I can cherry-pick around it.
 
