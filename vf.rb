@@ -77,6 +77,10 @@ class Configuration
       :auto_find => {
         :convert => :to_bool,
         :value => false
+      },
+      :local_directory_first => {
+        :convert => :to_bool,
+        :value => false
       }
     }
     
@@ -118,6 +122,7 @@ class VF
   attr_accessor :find
   attr_accessor :history
   attr_accessor :config
+  attr_accessor :alias
   
   def initialize
     @verbose = false
@@ -126,6 +131,7 @@ class VF
     @remove = false
     @find = false
     @history = false
+    @alias = false
     
     @config = nil
     @commands = []
@@ -202,35 +208,48 @@ class VF
       return
     end
     
+    if @alias == false and @configuration[:local_directory_first] == true and Dir.glob("*").include?(a)
+      cd a
+      return
+    end
+    
+    # Find in alias
     if @data[a]
       cd @data[a]
-    else
-      a = "" if a.nil?
-      if a == "-" or a == "" or File.exist? a
-        cd a
+      return
+    end
+
+    # Home, last or existing directory
+    a = "" if a.nil?
+    if a == "-" or a == "" or File.exist? a
+      cd a
+      return
+    end
+
+    # History
+    if a[0].chr == "+"
+      position = a.to_i * -1
+      path = @historize[position]
+      if path.nil?
+        echo "This entry does not existe. See 'vf -H #{position*-1}'"
+        return
       else
-        if a[0].chr == "+"
-          position = a.to_i * -1
-          path = @historize[position]
-          if path.nil?
-            echo "This entry does not existe. See 'vf -H #{position*-1}'"
-          else
-            cd path
-          end
-        else
-          find = nil
-          if @find or @configuration[:auto_find]
-            find = `ls -R . | grep -m1 /#{a}:`.gsub!(/:$/,'')
-          end
-        
-          if find
-            cd find
-          else
-            echo "Don't know where is #{a}"
-          end
-        end
+        cd path
+        return
       end
     end
+
+    # Find directory
+    find = nil
+    if @find or @configuration[:auto_find]
+      find = `ls -R . | grep -m1 /#{a}:`.gsub!(/:$/,'')
+    end  
+    if find
+      cd find
+      return
+    end
+    
+    echo "Don't know where is #{a}"
   end
   
   def usage()
@@ -239,6 +258,7 @@ class VF
     echo "-s, --save                         : Save current path to alias"
     echo "-r, --remove                       : Remove alias"
     echo "-l, --list                         : List alias"
+    echo "-a, --alias                        : Use alias"
     echo "-f, --find                         : Try to find the directory"
     echo "-H, --history                      : Display history"
     echo "-c, --config show|<option> <value> : Show or set configuration"
@@ -287,6 +307,7 @@ oOpt = GetoptLong.new(
   ['--save',    '-s', GetoptLong::NO_ARGUMENT],
   ['--remove',  '-r', GetoptLong::NO_ARGUMENT],
   ['--list',    '-l', GetoptLong::NO_ARGUMENT],
+  ['--alias',   '-a', GetoptLong::NO_ARGUMENT],
   ['--find',    '-f', GetoptLong::NO_ARGUMENT],
   ['--history', '-H', GetoptLong::NO_ARGUMENT],
   ['--config',  '-c', GetoptLong::REQUIRED_ARGUMENT],
@@ -306,6 +327,8 @@ begin
         vf.remove = true
       when '--list'
         vf.list = true
+      when '--alias'
+        vf.alias = true
       when '--history'
         vf.history = true
       when '--config'
