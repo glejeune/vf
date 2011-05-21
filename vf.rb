@@ -123,6 +123,7 @@ class VF
   attr_accessor :history
   attr_accessor :config
   attr_accessor :alias
+  attr_accessor :completion
   
   def initialize
     @verbose = false
@@ -132,6 +133,7 @@ class VF
     @find = false
     @history = false
     @alias = false
+    @completion = false
     
     @config = nil
     @commands = []
@@ -177,6 +179,11 @@ class VF
       @data.each do |k, v|
         echo "#{k} : #{v}"
       end
+      return
+    end
+
+    if @completion
+      add_command "#{@data.keys.join(" ")}"
       return
     end
     
@@ -302,16 +309,17 @@ end
 # -- main --
 
 oOpt = GetoptLong.new(
-  ['--verbose', '-V', GetoptLong::NO_ARGUMENT],
-  ['--help',    '-h', GetoptLong::NO_ARGUMENT],
-  ['--save',    '-s', GetoptLong::NO_ARGUMENT],
-  ['--remove',  '-r', GetoptLong::NO_ARGUMENT],
-  ['--list',    '-l', GetoptLong::NO_ARGUMENT],
-  ['--alias',   '-a', GetoptLong::NO_ARGUMENT],
-  ['--find',    '-f', GetoptLong::NO_ARGUMENT],
-  ['--history', '-H', GetoptLong::NO_ARGUMENT],
-  ['--config',  '-c', GetoptLong::REQUIRED_ARGUMENT],
-  ['--version', '-v', GetoptLong::NO_ARGUMENT]
+  ['--verbose',     '-V', GetoptLong::NO_ARGUMENT],
+  ['--help',        '-h', GetoptLong::NO_ARGUMENT],
+  ['--save',        '-s', GetoptLong::NO_ARGUMENT],
+  ['--remove',      '-r', GetoptLong::NO_ARGUMENT],
+  ['--list',        '-l', GetoptLong::NO_ARGUMENT],
+  ['--completion',  '-C', GetoptLong::NO_ARGUMENT],
+  ['--alias',       '-a', GetoptLong::NO_ARGUMENT],
+  ['--find',        '-f', GetoptLong::NO_ARGUMENT],
+  ['--history',     '-H', GetoptLong::NO_ARGUMENT],
+  ['--config',      '-c', GetoptLong::REQUIRED_ARGUMENT],
+  ['--version',     '-v', GetoptLong::NO_ARGUMENT]
 )
 
 vf = VF.new
@@ -327,6 +335,8 @@ begin
         vf.remove = true
       when '--list'
         vf.list = true
+      when '--completion'
+        vf.completion = true
       when '--alias'
         vf.alias = true
       when '--history'

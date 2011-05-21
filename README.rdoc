@@ -96,6 +96,8 @@ Then add the following line in your .bashrc, .zshrc, .<i>your shell</i>rc :
 
   source /path/to/vf/vf.sh
 
+If sometimes you think you are a guinea pig, you can try the experimental completion system. To do it, use <tt>vf-comp.sh</tt> instead of <tt>vf.sh</tt>. If you use <tt>vf-comp.sh</tt>, be sure to load <tt>compinit</tt> before!
+
 == It does not work to me
 
 <i>Sorry dude!</i> 
