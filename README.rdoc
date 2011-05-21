@@ -71,10 +71,12 @@ Here is the default result :
    history_max_size = 50
    history_display_size = 10
    auto_find = false
+   local_directory_first = true
 
 * <tt>history_max_size</tt> is the history size (see "history" bellow)
 * <tt>history_display_size</tt> is the history size, displayed by the <tt>-H</tt> option (see "history" bellow)
 * <tt>auto_find</tt> allow vf to find the directory, or not (see <tt>-f</tt> option)
+* <tt>local_directory_first</tt> set to <tt>true</tt> will look if <tt>./dir</tt> exist before looking in the alias list
 
 If you want to change an options, use <tt>--config</tt> :
 
