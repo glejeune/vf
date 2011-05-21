@@ -7,7 +7,7 @@
 # 	compinit
 
 export VF_HOME=$(dirname $0)
-OPTIONS=($(ruby $VF_HOME/vf.rb -C))
+VF_OPTIONS=($(ruby $VF_HOME/vf.rb -C))
 
 vf() {
 	eval $(ruby $VF_HOME/vf.rb $@)
@@ -17,7 +17,7 @@ vf() {
 
 __zsh_make_comp_list()
 {
-	compadd $OPTIONS
+	compadd $VF_OPTIONS
 	_files
 }
 
@@ -30,7 +30,7 @@ __zsh_complete()
 
 __bash_make_comp_list()
 {	
-	COMPREPLY=( $(compgen -W "${OPTIONS[*]}") )
+	COMPREPLY=( $(compgen -W "${VF_OPTIONS[*]}") )
 	return 0
 }
 
