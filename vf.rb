@@ -10,6 +10,7 @@ VF_HOME = File.join(HOME, ".vf")
 VF_REPO = File.join(VF_HOME, "vf.yml")
 VF_HISTORY = File.join(VF_HOME, "vf.history")
 VF_CONFIGURATION = File.join(VF_HOME, "vf.conf")
+VF_STATS = File.join(VF_HOME, "vf.stats")
 CURRENT_PATH = File.expand_path(".")
 
 class String
@@ -21,6 +22,43 @@ end
 class Array
   def rotate
     push(shift)[-1]
+  end
+end
+
+class Statistics
+  def initialize
+    if File.exist? VF_STATS
+      @stats = YAML.load(File.open VF_STATS)
+    else
+      @stats = {}
+    end
+  end
+  
+  def find(s)
+    possibilities = @stats.select {|dir, usage| 
+      not Regexp.new(".*#{s}.*").match(dir).nil?
+    }.to_a # use to_a to be 1.9 compatible
+    
+    return nil if possibilities.size == 0
+    
+    possibilities.inject({}) {|h,a| h[a[1]]=a[0]; h }.max[1]
+  end
+  
+  def <<(dir)
+    unless @stats.keys.include? dir
+      @stats[dir] = 0
+    end
+    @stats[dir] += 1
+  end
+  
+  def each(&b)
+    @stats.each do |k, v|
+      yield(k, v)
+    end
+  end
+  
+  def save
+    File.open(VF_STATS, "w") { |file| file.puts(@stats.to_yaml) }
   end
 end
 
@@ -124,6 +162,7 @@ class VF
   attr_accessor :config
   attr_accessor :alias
   attr_accessor :completion
+  attr_accessor :jump
   
   def initialize
     @verbose = false
@@ -134,6 +173,7 @@ class VF
     @history = false
     @alias = false
     @completion = false
+    @jump = false
     
     @config = nil
     @commands = []
@@ -147,12 +187,14 @@ class VF
     
     @configuration = Configuration::new()
     @historize = Historize::new(@configuration[:history_max_size])
+    @statistics = Statistics::new()
   end
   
   def run(a)
     play(a)
     puts @commands.join(";").gsub(/;{2,}/, ";")
     @historize.save
+    @statistics.save
   end
   
   def play( a )
@@ -215,6 +257,22 @@ class VF
       return
     end
     
+    if @jump
+      if a == nil
+        echo "Statistics :"
+        @statistics.each do |path, value|
+          echo "  #{path} : #{value}"
+        end
+        return
+      end
+      
+      r = @statistics.find(a)
+      unless r.nil?
+        cd r
+        return
+      end
+    end
+    
     if @alias == false and @configuration[:local_directory_first] == true and Dir.glob("*").include?(a)
       cd a
       return
@@ -266,6 +324,7 @@ class VF
     echo "-r, --remove                       : Remove alias"
     echo "-l, --list                         : List alias"
     echo "-a, --alias                        : Use alias"
+    echo "-j, --jump                         : Autojump"
     echo "-f, --find                         : Try to find the directory"
     echo "-H, --history                      : Display history"
     echo "-c, --config show|<option> <value> : Show or set configuration"
@@ -299,6 +358,7 @@ class VF
     path = @historize[-2] if path == "-"
     path = File.expand_path(File.join(CURRENT_PATH, path))  unless path[0].chr == "/" or path[0].chr == "~"
     @historize << path
+    @statistics << path
   end
   
   def normalize( path )
@@ -317,6 +377,7 @@ oOpt = GetoptLong.new(
   ['--completion',  '-C', GetoptLong::NO_ARGUMENT],
   ['--alias',       '-a', GetoptLong::NO_ARGUMENT],
   ['--find',        '-f', GetoptLong::NO_ARGUMENT],
+  ['--jump',        '-j', GetoptLong::NO_ARGUMENT],
   ['--history',     '-H', GetoptLong::NO_ARGUMENT],
   ['--config',      '-c', GetoptLong::REQUIRED_ARGUMENT],
   ['--version',     '-v', GetoptLong::NO_ARGUMENT]
@@ -345,6 +406,8 @@ begin
         vf.config = xValue
       when '--find'
         vf.find = true
+      when '--jump'
+        vf.jump = true
       when '--help'
         vf.usage( )
         exit
