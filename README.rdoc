@@ -59,6 +59,27 @@ Then you can use <tt>+N</tt> to go back to <tt>N</tt> :
   vf +2
   # I'm now in /Users/greg/Documents/CouchDB
 
+=== autojump[https://github.com/joelthelion/autojump] mode
+
+Consult tour statistics :
+
+  vf -j
+
+This will display a list like :
+
+  Statistics :
+   /Users/greg/.vf : 8
+   /Users/greg/VIDAL/Dev/github/merlin : 4
+   /Users/greg/Dev/github : 4
+   /Users/greg : 1
+   /Users/greg/VIDAL/Dev/github : 1
+   /Users/greg/Dev/github/vf : 9
+
+Then use the <tt>-j</tt> option again to go to the most visited directory :
+
+  vf -j github
+  # I'm now in /Users/greg/Dev/github/vf
+
 === Configuration
 
 Display the current configuration :
@@ -98,7 +119,9 @@ Then add the following line in your .bashrc, .zshrc, .<i>your shell</i>rc :
 
   source /path/to/vf/vf.sh
 
-If sometimes you think you are a guinea pig, you can try the experimental completion system. To do it, use <tt>vf-comp.sh</tt> instead of <tt>vf.sh</tt>. If you use <tt>vf-comp.sh</tt>, be sure to load <tt>compinit</tt> before!
+If sometimes you think you are a guinea pig, you can try the experimental completion system. To do it, use <tt>vf-comp.sh</tt> instead of <tt>vf.sh</tt>. 
+
+*ZSH Users*, if you use <tt>vf-comp.sh</tt>, be sure to load <tt>compinit</tt> before!
 
 == It does not work to me
 
