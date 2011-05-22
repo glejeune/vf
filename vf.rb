@@ -3,7 +3,7 @@ require 'fileutils'
 require 'yaml'
 require 'getoptlong'
 
-VF_VERSION="0.0.1"
+VF_VERSION="0.0.2"
 
 HOME = File.expand_path('~')
 VF_HOME = File.join(HOME, ".vf")
