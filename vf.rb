@@ -307,13 +307,17 @@ class VF
     # Find directory
     find = nil
     if @find or @configuration[:auto_find]
-      find = `ls -R . | grep -m1 /#{a}:`.gsub!(/:$/,'')
-    end  
+      find = `find . -name "#{a}" | head -1`
+    end
     if find
-      cd find
+      if File.directory?(File.join(`pwd`.gsub(/\ *$/, ""), find.gsub(/^\.\//, "")))
+        cd find
+      else
+        cd File.dirname(find)
+      end
       return
     end
-    
+
     echo "Don't know where is #{a}"
   end
   
