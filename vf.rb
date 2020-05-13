@@ -296,7 +296,7 @@ class VF
       position = a.to_i * -1
       path = @historize[position]
       if path.nil?
-        echo "This entry does not existe. See 'vf -H #{position*-1}'"
+        echo "This entry does not exist. See 'vf -H #{position*-1}'"
         return
       else
         cd path
@@ -318,7 +318,7 @@ class VF
       return
     end
 
-    echo "Don't know where is #{a}"
+    echo "Could not find #{a}"
   end
   
   def usage()
@@ -326,7 +326,7 @@ class VF
     echo "-V, --verbose                      : Verbose mode"
     echo "-s, --save                         : Save current path to alias"
     echo "-r, --remove                       : Remove alias"
-    echo "-l, --list                         : List alias"
+    echo "-l, --list                         : List aliases"
     echo "-a, --alias                        : Use alias"
     echo "-j, --jump                         : Autojump"
     echo "-f, --find                         : Try to find the directory"
